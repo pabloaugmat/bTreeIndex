@@ -113,7 +113,13 @@ void buscaSequencial(const char *nomeArquivo, int chaveProcurada) {
 }
 
 int main() {
-    int ordem = 4;
+    int ordem = 1;
+    bool sair = false;
+
+    while(ordem % 2 == 1){
+        printf("Digite a ordem (PAR) desejada para a arvore: ");
+        scanf("%d", &ordem);
+    }
 
     Btree *btree = criaBtree(ordem);
 
@@ -126,12 +132,13 @@ int main() {
     clock_t inicio, fim;
     double tempo_gasto;
 
-    while (true) {
+    while (sair == false) {
         printf("\nMenu:\n");
         printf("1. Criar índice\n");
         printf("2. Procurar elementos\n");
         printf("3. Remover registro\n");
-        printf("4. Imprimir\n");
+        printf("4. Sair\n");
+        printf("5. (Imprimir arvore)\n");
         printf("Escolha uma opção: ");
         scanf("%d", &opcao);
 
@@ -151,20 +158,21 @@ int main() {
                 // Busca Binária
                 inicio = clock();
                 posicao = buscaPosicao(btree, btree->raiz, chave);
-                fim = clock();
-                tempo_gasto = (double)(fim - inicio) / CLOCKS_PER_SEC;
-                printf("Tempo gasto na busca binária: %.6f segundos.\n", tempo_gasto);
+                //fim = clock();
+                
 
                 if (posicao != -1) {
                     printf("Registro encontrado na posição: %ld\n", posicao);
-                    inicio = clock();
+                    //inicio = clock();
                     acessarPosicaoArquivo("alunos.txt", posicao);
                     fim = clock();
                     tempo_gasto = (double)(fim - inicio) / CLOCKS_PER_SEC;
-                    printf("Tempo gasto na leitura do arquivo: %.6f segundos.\n", tempo_gasto);
+                    //printf("Tempo gasto na leitura do arquivo: %.6f segundos.\n", tempo_gasto);
                 } else {
                     printf("Registro não encontrado na árvore.\n");
                 }
+                //tempo_gasto += (double)(fim - inicio) / CLOCKS_PER_SEC;
+                printf("Tempo gasto na busca binária: %.6f segundos.\n", tempo_gasto);
 
                 // Busca Sequencial
                 inicio = clock();
@@ -186,10 +194,14 @@ int main() {
                     printf("Registro removido da árvore.\n");
                 } else {
                     printf("Registro não encontrado na árvore.\n");
+                    break;
                 }
                 break;
 
             case 4:
+                sair = true;
+                break;
+            case 5:
                 imprimeBTree(btree->raiz,0);
                 break;
 
