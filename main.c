@@ -1,3 +1,15 @@
+
+/*
+    ALGORITMOS E ESTRUTURA DE DADOS 2 - TRABALHO2
+    
+        ANA CLARA BRAZ - 2022001760
+        CAIO TEODORO - 2020004501
+        EMAANUEL MARTINS - 2022004073
+        PABLO AUGUSTO - 2022015139
+
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>

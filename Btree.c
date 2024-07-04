@@ -1,3 +1,13 @@
+/*
+    ALGORITMOS E ESTRUTURA DE DADOS 2 - TRABALHO2
+    
+        ANA CLARA BRAZ - 2022001760
+        CAIO TEODORO - 2020004501
+        EMAANUEL MARTINS - 2022004073
+        PABLO AUGUSTO - 2022015139
+
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -213,7 +223,7 @@ void removeIndice(Btree *btree, int chave)
 {
     node *folha = buscaFolha(btree, btree->raiz, chave);
 
-    // Verifica se a chave está presente na árvore
+    
     int posicao = buscaPosicao(btree, folha, chave);
     if (posicao == -1)
     {
@@ -221,26 +231,26 @@ void removeIndice(Btree *btree, int chave)
         return;
     }
 
-    // Remove a chave da folha
+    
     int i = 0;
     while (i < folha->qnt && folha->indices[i]->chave != chave)
     {
         i++;
     }
 
-    // Desloca os índices subsequentes na folha
+    
     for (int j = i; j < folha->qnt - 1; j++)
     {
         folha->indices[j] = folha->indices[j + 1];
     }
 
-    // Atualiza a quantidade de índices na folha
+    
     folha->qnt--;
 
-    // Verifica se a folha está abaixo do limite mínimo de chaves
+    
     if (folha->qnt < (btree->ordem - 1) / 2)
     {
-        // Caso a raiz seja a única folha e tenha menos de 2 chaves
+        
         if (btree->raiz == folha && folha->qnt < 1)
         {
             free(folha);
@@ -248,7 +258,7 @@ void removeIndice(Btree *btree, int chave)
         }
         else
         {
-            // Tentativa de emprestar de um irmão
+            
             bool emprestado = false;
             if (folha->pai != NULL)
             {
@@ -259,10 +269,10 @@ void removeIndice(Btree *btree, int chave)
                     indiceFolha++;
                 }
 
-                // Tentar emprestar do irmão esquerdo
+                
                 if (indiceFolha > 0 && pai->filhos[indiceFolha - 1]->qnt > (btree->ordem - 1) / 2)
                 {
-                    // Transfere o último índice do filho esquerdo para a folha
+                    
                     node *esquerdo = pai->filhos[indiceFolha - 1];
                     idx *indiceTransferido = esquerdo->indices[esquerdo->qnt - 1];
                     esquerdo->indices[esquerdo->qnt - 1] = NULL;
@@ -279,7 +289,7 @@ void removeIndice(Btree *btree, int chave)
                         esquerdo->filhos[esquerdo->qnt] = NULL;
                     }
 
-                    // Insere o índice transferido na folha
+                    
                     for (int j = folha->qnt; j > 0; j--)
                     {
                         folha->indices[j] = folha->indices[j - 1];
@@ -287,26 +297,26 @@ void removeIndice(Btree *btree, int chave)
                     folha->indices[0] = indiceTransferido;
                     folha->qnt++;
 
-                    // Atualiza o índice do pai
+                    
                     pai->indices[indiceFolha - 1] = folha->indices[0];
 
                     emprestado = true;
                 }
-                // Tentar emprestar do irmão direito
+                
                 else if (indiceFolha < pai->qnt && pai->filhos[indiceFolha + 1]->qnt > (btree->ordem - 1) / 2)
                 {
-                    // Transfere o primeiro índice do filho direito para a folha
+                    
                     node *direito = pai->filhos[indiceFolha + 1];
                     idx *indiceTransferido = direito->indices[0];
 
-                    // Move os filhos, se existirem
+                    
                     if (!folha->folha)
                     {
                         folha->filhos[folha->qnt + 1] = direito->filhos[0];
                         direito->filhos[0] = NULL;
                     }
 
-                    // Remove o índice do filho direito
+                    
                     for (int j = 0; j < direito->qnt - 1; j++)
                     {
                         direito->indices[j] = direito->indices[j + 1];
@@ -314,32 +324,32 @@ void removeIndice(Btree *btree, int chave)
                     direito->indices[direito->qnt - 1] = NULL;
                     direito->qnt--;
 
-                    // Insere o índice transferido na folha
+                    
                     folha->indices[folha->qnt] = indiceTransferido;
                     folha->qnt++;
 
-                    // Atualiza o índice do pai
+                    
                     pai->indices[indiceFolha] = direito->indices[0];
 
                     emprestado = true;
                 }
 
-                // Rebalanceia se nenhum empréstimo foi possível
+               
                 if (!emprestado)
                 {
-                    // Fusão com o irmão esquerdo
+                    
                     if (indiceFolha > 0)
                     {
                         node *esquerdo = pai->filhos[indiceFolha - 1];
 
-                        // Transfere todos os índices da folha para o irmão esquerdo
+                        
                         for (int j = 0; j < folha->qnt; j++)
                         {
                             esquerdo->indices[esquerdo->qnt] = folha->indices[j];
                             esquerdo->qnt++;
                         }
 
-                        // Transfere os filhos, se existirem
+                        
                         if (!folha->folha)
                         {
                             for (int j = 0; j <= folha->qnt; j++)
@@ -350,7 +360,7 @@ void removeIndice(Btree *btree, int chave)
                             }
                         }
 
-                        // Remove a folha do pai
+                        
                         free(folha);
                         for (int j = indiceFolha; j < pai->qnt - 1; j++)
                         {
@@ -361,25 +371,25 @@ void removeIndice(Btree *btree, int chave)
                         pai->filhos[pai->qnt] = NULL;
                         pai->qnt--;
 
-                        // Rebalanceia o pai se necessário
+                        
                         if (pai->qnt < (btree->ordem - 1) / 2 && pai != btree->raiz)
                         {
                             removeIndice(btree, pai->indices[0]->chave);
                         }
                     }
-                    // Fusão com o irmão direito
+                    
                     else
                     {
                         node *direito = pai->filhos[indiceFolha + 1];
 
-                        // Transfere todos os índices do irmão direito para a folha
+                        
                         for (int j = 0; j < direito->qnt; j++)
                         {
                             folha->indices[folha->qnt] = direito->indices[j];
                             folha->qnt++;
                         }
 
-                        // Transfere os filhos, se existirem
+                        
                         if (!folha->folha)
                         {
                             for (int j = 0; j <= direito->qnt; j++)
@@ -390,7 +400,7 @@ void removeIndice(Btree *btree, int chave)
                             }
                         }
 
-                        // Remove o irmão direito do pai
+                       
                         free(direito);
                         for (int j = indiceFolha; j < pai->qnt - 1; j++)
                         {
@@ -401,7 +411,7 @@ void removeIndice(Btree *btree, int chave)
                         pai->filhos[pai->qnt] = NULL;
                         pai->qnt--;
 
-                        // Rebalanceia o pai se necessário
+                        
                         if (pai->qnt < (btree->ordem - 1) / 2 && pai != btree->raiz)
                         {
                             removeIndice(btree, pai->indices[0]->chave);
