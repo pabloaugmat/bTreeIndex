@@ -1,6 +1,7 @@
 
 /*
-    ALGORITMOS E ESTRUTURA DE DADOS 2 - TRABALHO2
+    CTCO02 ALGORITMOS E ESTRUTURA DE DADOS 2 - ARVORE B
+    PROF. VANESSA SOUZA
     
         ANA CLARA BRAZ - 2022001760
         CAIO TEODORO - 2020004501
@@ -8,7 +9,6 @@
         PABLO AUGUSTO - 2022015139
 
  */
-
 
 #include <stdio.h>
 #include <stdlib.h>
