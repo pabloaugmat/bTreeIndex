@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include "Btree.h"
 
+#define MAX_CHAVES 4 
+
 typedef struct idx
 {
     int chave;   // chave primaria
@@ -30,124 +32,81 @@ Btree *criaBtree(int ordem)
     return novaBtree;
 }
 
-node *criaNo(Btree *btree)
-{
-    node *novoNo = (node *)malloc(sizeof(node));
-    if (novoNo == NULL)
-    {
-        return NULL;
-    }
-    novoNo->indices = (idx **)malloc((btree->ordem - 1) * sizeof(idx *));
-    novoNo->filhos = (node **)malloc(btree->ordem * sizeof(node *));
-    novoNo->qnt = 0;
-    novoNo->folha = true;
-    novoNo->pai = NULL;
-    return novoNo;
+node *criaNo() {
+    node *novo_no = (node *)malloc(sizeof(node));
+    novo_no->indices = (idx **)malloc(MAX_CHAVES * sizeof(idx *));
+    novo_no->filhos = (node **)malloc((MAX_CHAVES + 1) * sizeof(node *));
+    novo_no->qnt = 0;
+    novo_no->folha = true;
+    novo_no->pai = NULL;
+    return novo_no;
 }
 
-void ordenaIndices(node *no)
-{
-    idx *IndiceAux;
-    bool troca;
-    for (int i = 0; i < no->qnt - 1; i++)
-    {
-        troca = false;
-        for (int j = 0; j < no->qnt - i - 1; j++)
-        {
-            if (no->indices[j]->chave > no->indices[j + 1]->chave)
-            {
-                IndiceAux = no->indices[j];
+
+void ordenaIndices(node *no) {
+    int i, j;
+    for (i = 0; i < no->qnt - 1; i++) {
+        for (j = 0; j < no->qnt - i - 1; j++) {
+            if (no->indices[j]->chave > no->indices[j + 1]->chave) {
+                idx *temp = no->indices[j];
                 no->indices[j] = no->indices[j + 1];
-                no->indices[j + 1] = IndiceAux;
-                troca = true;
+                no->indices[j + 1] = temp;
             }
         }
-        if (troca == false)
-        {
-            break;
-        }
     }
 }
+void split(Btree *btree, node *no, int indice_filho) {
+    node *filho = no->filhos[indice_filho];
+    node *novo_no = criaNo();
+    novo_no->folha = filho->folha;
+    novo_no->qnt = MAX_CHAVES / 2;
 
-void split(Btree *btree, node *no, idx *indice)
-{
-    node *novoNo = criaNo(btree);
-    int meio = (btree->ordem - 1) / 2;
+    for (int i = 0; i < MAX_CHAVES / 2; i++) {
+        novo_no->indices[i] = filho->indices[i + MAX_CHAVES / 2];
+    }
 
-    // Se o novo índice deve ficar na segunda metade
-    if (indice->chave > no->indices[meio]->chave)
-    {
-        insereNaPagina(btree, novoNo, indice);
-        for (int i = 0; i < meio; i++)
-        {
-            insereNaPagina(btree, novoNo, no->indices[meio + i + 1]);
-            no->indices[meio + i + 1] = NULL;
-            no->qnt--;
-            novoNo->filhos[i] = no->filhos[meio + i + 1];
-            no->filhos[meio + i + 1] = NULL;
-        }
-        if (no->pai == NULL)
-        {
-            node *novoPai = criaNo(btree);
-            novoPai->folha = false;
-            novoPai->filhos[0] = no;
-            novoPai->filhos[1] = novoNo;
-            insereNaPagina(btree, novoPai, no->indices[meio]);
-            no->indices[meio] = NULL;
-            no->qnt--;
-            btree->raiz = novoPai; // Atualiza a raiz da árvore
-        }
-        else
-        {
-            insereNaPagina(btree, no->pai, no->indices[meio]);
-            no->qnt--;
+    if (!filho->folha) {
+        for (int i = 0; i <= MAX_CHAVES / 2; i++) {
+            novo_no->filhos[i] = filho->filhos[i + MAX_CHAVES / 2];
+            novo_no->filhos[i]->pai = novo_no;
         }
     }
-    // Se o novo índice deve ficar na primeira metade
-    else if (indice->chave < no->indices[meio]->chave)
-    {
-        insereNaPagina(btree, novoNo, no->indices[meio]);
-        no->indices[meio] = NULL;
-        no->qnt--;
-        for (int i = 0; i < meio; i++)
-        {
-            insereNaPagina(btree, novoNo, no->indices[meio + i + 1]);
-            no->indices[meio + i + 1] = NULL;
-            no->qnt--;
-            novoNo->filhos[i] = no->filhos[meio + i + 1];
-            no->filhos[meio + i + 1] = NULL;
-        }
-        insereNaPagina(btree, no, indice);
-        if (no->pai == NULL)
-        {
-            node *novoPai = criaNo(btree);
-            novoPai->folha = false;
-            novoPai->filhos[0] = no;
-            novoPai->filhos[1] = novoNo;
-            insereNaPagina(btree, novoPai, no->indices[meio]);
-            no->indices[meio] = NULL;
-            no->qnt--;
-            btree->raiz = novoPai; // Atualiza a raiz da árvore
-        }
-        else
-        {
-            insereNaPagina(btree, no->pai, no->indices[meio]);
-            no->qnt--;
-        }
+
+    filho->qnt = MAX_CHAVES / 2;
+    no->qnt++;
+    for (int i = no->qnt - 1; i > indice_filho; i--) {
+        no->filhos[i + 1] = no->filhos[i];
     }
+    no->filhos[indice_filho + 1] = novo_no;
+    novo_no->pai = no;
+
+    for (int i = no->qnt - 1; i > indice_filho; i--) {
+        no->indices[i] = no->indices[i - 1];
+    }
+    no->indices[indice_filho] = filho->indices[MAX_CHAVES / 2 - 1];
 }
 
-void insereNaPagina(Btree *btree, node *no, idx *indice)
-{
-    if (no->qnt < btree->ordem - 1)
-    {
-        no->indices[no->qnt] = indice;
+void insereNaPagina(Btree *btree, node *no, idx *indice) {
+    int i = no->qnt - 1;
+    if (no->folha) {
+        while (i >= 0 && indice->chave < no->indices[i]->chave) {
+            no->indices[i + 1] = no->indices[i];
+            i--;
+        }
+        no->indices[i + 1] = indice;
         no->qnt++;
-        ordenaIndices(no);
-    }
-    else
-    {
-        split(btree, no, indice);
+    } else {
+        while (i >= 0 && indice->chave < no->indices[i]->chave) {
+            i--;
+        }
+        i++;
+        if (no->filhos[i]->qnt == MAX_CHAVES) {
+            split(btree, no, i);
+            if (indice->chave > no->indices[i]->chave) {
+                i++;
+            }
+        }
+        insereNaPagina(btree, no->filhos[i], indice);
     }
 }
 
@@ -185,35 +144,40 @@ node *buscaFolha(Btree *btree, node *noAtual, int chave)
             }
         }
     }
-    return noAtual; // Retorna NULL se não encontrar a folha
+    return noAtual; 
 }
 
-void insere(Btree *btree, int chave, int posicao)
-{
-    // cria par de indice
-    idx *novoIndice = (idx *)malloc(sizeof(idx));
-    novoIndice->chave = chave;
-    novoIndice->posicao = posicao;
+void insere(Btree *btree, int chave, int posicao) {
+    node *raiz = btree->raiz;
+    idx *indice = (idx *)malloc(sizeof(idx));
+    indice->chave = chave;
+    indice->posicao = posicao;
 
-    // logica caso a arvore esteja vazia
-    if (btree->raiz == NULL)
-    {
-        node *novoNo = criaNo(btree);
-        insereNaPagina(btree, novoNo, novoIndice);
-        btree->raiz = novoNo; // Define o novo nó como raiz
-    }
-    // caso não esteja vazia
-    else
-    {
-        node *folha = buscaFolha(btree, btree->raiz, chave);
-        insereNaPagina(btree, folha, novoIndice);
+    if (raiz == NULL) {
+        
+        raiz = criaNo();
+        raiz->indices[0] = indice;
+        raiz->qnt = 1;
+        btree->raiz = raiz;
+    } else {
+        if (raiz->qnt == MAX_CHAVES) {
+            
+            node *novo_no = criaNo();
+            btree->raiz = novo_no;
+            novo_no->folha = false;
+            novo_no->filhos[0] = raiz;
+            split(btree, novo_no, 0);
+            insereNaPagina(btree, novo_no, indice);
+        } else {
+            insereNaPagina(btree, raiz, indice);
+        }
     }
 }
 
-// se retornar -1 a chave não esta na arvore
+
 int buscaPosicao(Btree *btree, node *noAtual, int chave)
 {
-    // Procura apenas no nó atual se for uma folha
+    
     if (noAtual->folha == true)
     {
         for (int i = 0; i < noAtual->qnt; i++)
@@ -226,7 +190,6 @@ int buscaPosicao(Btree *btree, node *noAtual, int chave)
     }
     else
     {
-        // Busca nos filhos com base nos índices do nó atual
         int i;
         for (i = 0; i < noAtual->qnt; i++)
         {
@@ -239,12 +202,9 @@ int buscaPosicao(Btree *btree, node *noAtual, int chave)
                 break; // Encontrou o local de inserção
             }
         }
-
-        // Continua a busca no filho apropriado
         return buscaPosicao(btree, noAtual->filhos[i], chave);
     }
 
-    // Se a chave não foi encontrada em nenhum lugar
     return -1;
 }
 
@@ -308,7 +268,7 @@ void removeIndice(Btree *btree, int chave)
                     esquerdo->indices[esquerdo->qnt - 1] = NULL;
                     esquerdo->qnt--;
 
-                    // Move os filhos, se existirem
+                    
                     if (!folha->folha)
                     {
                         for (int j = folha->qnt; j > 0; j--)
@@ -453,3 +413,22 @@ void removeIndice(Btree *btree, int chave)
     }
 }
 
+
+void imprimeBTree(node *raiz, int nivel)
+{
+    if (raiz != NULL)
+    {
+        int i;
+        for (i = 0; i < raiz->qnt; i++)
+        {
+            imprimeBTree(raiz->filhos[i], nivel + 1);
+            printf("\n");
+            for (int j = 0; j < nivel; j++)
+            {
+                printf("| ");
+            }
+            printf("(%d, %d)", raiz->indices[i]->chave, raiz->indices[i]->posicao);
+        }
+        imprimeBTree(raiz->filhos[i], nivel + 1);
+    }
+}

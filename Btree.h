@@ -12,11 +12,11 @@ typedef struct Btree
 
 Btree *criaBtree(int ordem);
 
-node *criaNo(Btree *btree);
+node *criaNo();
 
 void ordenaIndices(node *no);
 
-void split(Btree *btree, node *no, idx *indice);
+void split(Btree *btree, node *no, int indice_filho);
 
 void insereNaPagina(Btree *btree, node *no, idx *indice);
 
@@ -27,3 +27,5 @@ void insere(Btree *btree, int chave, int posicao);
 int buscaPosicao(Btree *btree, node *noAtual, int chave);
 
 void removeIndice(Btree *btree, int chave);
+
+void imprimeBTree(node *raiz, int nivel);

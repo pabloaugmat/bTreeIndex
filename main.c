@@ -2,129 +2,107 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "Btree.h"
 #include <time.h>
+#include "Btree.h"
 
 #define SEED 2616
 
-FILE *criarArquivoAlunos()
-{
-
+void criarArquivoAlunos() {
     const char *nomeArquivo = "alunos.txt";
 
     FILE *arquivo = fopen(nomeArquivo, "w");
-
-    if (arquivo == NULL)
-    {
+    if (arquivo == NULL) {
         printf("Erro ao criar o arquivo %s\n", nomeArquivo);
-        return NULL;
+        return;
     }
 
     int matricula;
     char nome[6] = "aluno";
     int idade = 28;
     char email[16] = "aluno@email.com";
-    for (int i = 0; i < 11000; i++)
-    {
+
+    for (int i = 0; i < 20000; i++) {
         matricula = rand() % 90000 + 10000;
         fprintf(arquivo, "%d %s %d %s\n", matricula, nome, idade, email);
     }
 
     fclose(arquivo);
-
     printf("Arquivo %s criado e escrito com sucesso!\n", nomeArquivo);
-    return arquivo;
 }
 
-void processarArquivo(Btree *btree)
-{
+void processarArquivo(Btree *btree) {
     const char *nomeArquivo = "alunos.txt";
     FILE *arquivo = fopen(nomeArquivo, "r");
 
-    if (arquivo == NULL)
-    {
+    if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo %s\n", nomeArquivo);
         return;
     }
 
     char linha[256];
-    int posicao;
     int chave;
+    long posicao;
 
-    while (fgets(linha, sizeof(linha), arquivo))
-    {
+    while (fgets(linha, sizeof(linha), arquivo)) {
         posicao = ftell(arquivo) - strlen(linha);
 
-        if (sscanf(linha, "%d", &chave) != 1)
-        {
+        if (sscanf(linha, "%d", &chave) != 1) {
             printf("Erro ao ler matrícula na linha: %s\n", linha);
             continue;
         }
 
-        printf("Posição: %d, Matrícula: %d\n", posicao, chave);
         insere(btree, chave, posicao);
     }
 
     fclose(arquivo);
 }
 
-void acessarPosicaoArquivo(const char *nomeArquivo, long posicao)
-{
+void acessarPosicaoArquivo(const char *nomeArquivo, long posicao) {
     FILE *arquivo = fopen(nomeArquivo, "r");
 
-    if (arquivo == NULL)
-    {
+    if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo %s\n", nomeArquivo);
         return;
     }
 
-    if (fseek(arquivo, posicao, SEEK_SET) != 0)
-    {
+    if (fseek(arquivo, posicao, SEEK_SET) != 0) {
         printf("Erro ao mover o ponteiro do arquivo para a posição %ld\n", posicao);
         fclose(arquivo);
         return;
     }
 
     char linha[256];
-    if (fgets(linha, sizeof(linha), arquivo) != NULL)
-    {
+    if (fgets(linha, sizeof(linha), arquivo) != NULL) {
         printf("Conteúdo a partir da posição %ld: %s\n", posicao, linha);
-    }
-    else
-    {
+    } else {
         printf("Erro ao ler a partir da posição %ld\n", posicao);
     }
 
     fclose(arquivo);
 }
 
-void buscaSequencial(const char *nomeArquivo, int chaveProcurada)
-{
+void buscaSequencial(const char *nomeArquivo, int chaveProcurada) {
     FILE *arquivo = fopen(nomeArquivo, "r");
 
-    if (arquivo == NULL)
-    {
+    if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo %s\n", nomeArquivo);
         return;
     }
 
     char linha[256];
-    int posicao;
+    long posicao;
     int chave;
 
-    while (fgets(linha, sizeof(linha), arquivo))
-    {
+    while (fgets(linha, sizeof(linha), arquivo)) {
         posicao = ftell(arquivo) - strlen(linha);
 
-        if (sscanf(linha, "%d", &chave) != 1)
-        {
+        if (sscanf(linha, "%d", &chave) != 1) {
             printf("Erro ao ler matrícula na linha: %s\n", linha);
             continue;
         }
 
-        if (chave == chaveProcurada)
-        {
-            printf("Registro encontrado na posição: %d\n", posicao);
+        if (chave == chaveProcurada) {
+            printf("Registro encontrado na posição: %ld\n", posicao);
             fclose(arquivo);
             return;
         }
@@ -134,79 +112,92 @@ void buscaSequencial(const char *nomeArquivo, int chaveProcurada)
     fclose(arquivo);
 }
 
-int main()
-{
-    bool looping = true;
-    int opcao, ordem = 3, chave, posicao;
-    double time_spent = 0.0;
-    clock_t inicio, fim;
-
-    while ((ordem & 1) != 0)
-    {
-        printf("Digite a ordem (PAR) desejada para a arvore: ");
-        scanf("%d", &ordem);
-    }
+int main() {
+    int ordem = 4;
 
     Btree *btree = criaBtree(ordem);
 
     srand(SEED);
     criarArquivoAlunos();
 
-    while (looping)
-    {
-        printf("Menu:\n");
-        printf("1. Criar indice\n");
+    int opcao;
+    long posicao;
+    int chave;
+    clock_t inicio, fim;
+    double tempo_gasto;
+
+    while (true) {
+        printf("\nMenu:\n");
+        printf("1. Criar índice\n");
         printf("2. Procurar elementos\n");
         printf("3. Remover registro\n");
-        printf("4. Sair\n");
+        printf("4. Imprimir\n");
+        printf("Escolha uma opção: ");
         scanf("%d", &opcao);
-        switch (opcao)
-        {
-        case 1:
-            processarArquivo(btree);
-            break;
-        case 2:
-            chave = rand() % 90000 + 10000; // gerando aleatorio pra comparação
-            printf("Matricula procurada: %d\n ", chave);
-            time_spent = 0.0;
-            inicio = clock();
-            posicao = buscaPosicao(btree, btree->raiz, chave);
-            fim = clock();
-            time_spent = (double)(fim - inicio) / CLOCKS_PER_SEC;
-            printf("TEMPO GASTO NA BUSCA BINARIA: %f\n", time_spent);
-            printf("encontrado na posição: %d\n", posicao);
-            time_spent = 0.0;
-            inicio = clock();
-            buscaSequencial("alunos.txt", posicao);
-            fim = clock();
-            time_spent = (double)(fim - inicio) / CLOCKS_PER_SEC;
-            printf("TEMPO GASTO NA BUSCA SEQUENCIAL: %f\n", time_spent);
-            if (posicao > -1)
-            {
-                acessarPosicaoArquivo("alunos.txt", posicao);
-            }
-            break;
-        case 3:
-            printf("digite a chave do indice que deseja remover:");
-            scanf("%d", &chave);
-            printf("o indice do seguinte registro sera removido:\n");
-            posicao = buscaPosicao(btree, btree->raiz, chave);
-            printf("encontrado na posição: %d\n", posicao);
-            if (posicao > -1)
-            {
-                acessarPosicaoArquivo("alunos.txt", posicao);
-            }
-            removeIndice(btree, chave);
-            break;
-        case 4:
-            looping = false;
-            break;
 
-        default:
-            break;
+        switch (opcao) {
+            case 1:
+                inicio = clock();
+                processarArquivo(btree);
+                fim = clock();
+                tempo_gasto = (double)(fim - inicio) / CLOCKS_PER_SEC;
+                printf("Índice criado em %.6f segundos.\n", tempo_gasto);
+                break;
+
+            case 2:
+                printf("Digite a chave que deseja procurar: ");
+                scanf("%d", &chave);
+
+                // Busca Binária
+                inicio = clock();
+                posicao = buscaPosicao(btree, btree->raiz, chave);
+                fim = clock();
+                tempo_gasto = (double)(fim - inicio) / CLOCKS_PER_SEC;
+                printf("Tempo gasto na busca binária: %.6f segundos.\n", tempo_gasto);
+
+                if (posicao != -1) {
+                    printf("Registro encontrado na posição: %ld\n", posicao);
+                    inicio = clock();
+                    acessarPosicaoArquivo("alunos.txt", posicao);
+                    fim = clock();
+                    tempo_gasto = (double)(fim - inicio) / CLOCKS_PER_SEC;
+                    printf("Tempo gasto na leitura do arquivo: %.6f segundos.\n", tempo_gasto);
+                } else {
+                    printf("Registro não encontrado na árvore.\n");
+                }
+
+                // Busca Sequencial
+                inicio = clock();
+                buscaSequencial("alunos.txt", chave);
+                fim = clock();
+                tempo_gasto = (double)(fim - inicio) / CLOCKS_PER_SEC;
+                printf("Tempo gasto na busca sequencial: %.6f segundos.\n", tempo_gasto);
+                break;
+
+            case 3:
+                printf("Digite a chave do registro que deseja remover: ");
+                scanf("%d", &chave);
+
+                posicao = buscaPosicao(btree, btree->raiz, chave);
+                if (posicao != -1) {
+                    printf("Registro encontrado na posição: %ld\n", posicao);
+                    acessarPosicaoArquivo("alunos.txt", posicao);
+                    removeIndice(btree, chave);
+                    printf("Registro removido da árvore.\n");
+                } else {
+                    printf("Registro não encontrado na árvore.\n");
+                }
+                break;
+
+            case 4:
+                imprimeBTree(btree->raiz,0);
+                break;
+
+            default:
+                printf("Opção inválida. Escolha novamente.\n");
+                break;
         }
     }
 
-    free(btree);
     return 0;
 }
