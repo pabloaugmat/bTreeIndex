@@ -29,3 +29,4 @@ int buscaPosicao(Btree *btree, node *noAtual, int chave);
 void removeIndice(Btree *btree, int chave);
 
 void imprimeBTree(node *raiz, int nivel);
+
